@@ -4,6 +4,7 @@ module ActiveSchema
       def self.included(base)
         base.extend(ClassMethods)
         base.extend(ActiveSchema::ActiveRecord::Associations)
+        base.extend(ActiveSchema::ActiveRecord::Manifest)
       end
 
       module ClassMethods
@@ -47,6 +48,7 @@ module ActiveSchema
 
           @active_schema_extended = true
           load_active_schema_associations if active_schema_config.associations.auto_create?
+          create_manifest if active_schema_config.manifest.auto_create?
         end
 
         public

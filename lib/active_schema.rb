@@ -16,6 +16,7 @@ require 'active_schema/active_record/connection_adapters/foreign_key_definition'
 require 'active_schema/active_record/connection_adapters/index_definition'
 require 'active_schema/active_record/connection_adapters/mysql_column'
 require 'active_schema/active_record/associations'
+require 'active_schema/active_record/manifest'
 
 module ActiveSchema
   module ActiveRecord
@@ -49,6 +50,17 @@ module ActiveSchema
       has_value :auto_create, :klass => :boolean, :default => true
     end
     has_value :associations, :klass => Associations, :default => Associations.new
+
+    class Manifest < Valuable
+      # Automatically create model manifest
+      has_value :auto_create, :klass => :boolean, :default => true
+
+      has_value :logger_environments, :default => [:development, :test]
+
+      has_value :rdoc_environments, :default => [:development]
+      has_value :rdoc_path, :default => "manifest"
+    end
+    has_value :manifest, :klass => Manifest, :default => Manifest.new
 
 
     def dup 
