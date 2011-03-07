@@ -37,6 +37,8 @@ module ActiveSchema
 
         if (columns = self.columns).any?
           types = connection.native_database_types
+          indexes = self.indexes.dup
+          foreign_keys = self.foreign_keys.dup
           stream.puts "== columns"
           # cribbed from AR schema_dumper.rb ...
           columns.each do |column|
@@ -62,9 +64,39 @@ module ActiveSchema
                 value.inspect
               end
             end
+            if foreign_key = foreign_keys.select{|fk| fk.column_names == [ column.name ]}.first
+              foreign_keys.delete(foreign_key)
+              stream.print ", :references => [#{foreign_key.references_table_name.to_sym.inspect}, #{foreign_key.references_column_names.first.to_sym.inspect}]"
+              stream.print ", :on_update => #{foreign_key.on_update.inspect}" if foreign_key.on_update
+              stream.print ", :on_delete => #{foreign_key.on_delete.inspect}" if foreign_key.on_delete
+            end
+            if index = indexes.select{|idx| idx.columns.include? column.name}.sort_by{|idx| idx.columns.length}.first
+              indexes.delete(index)
+              opts = index.opts.dup
+              opts[:with] = (index.columns - [column.name]).collect(&:to_sym) if index.columns.length > 1
+              stream.print ", :index => #{opts.inspect}"
+            end
             stream.puts
           end
           stream.puts
+
+          if indexes.any?
+            stream.puts "== additional indexes"
+            indexes.each do |index|
+              stream.puts "* index #{index.columns.collect(&:to_sym).inspect}#{_pp_options(index.opts)}"
+            end
+            stream.puts
+          end
+          if foreign_keys.any?
+            stream.puts "== additional foreign keys"
+            foreign_keys.each do |foreign_key|
+              stream.print "* foreign_key #{foreign_key.column_names.collect(&:to_sym).inspect}, #{foreign_key.references_table_name.to_sym.inspect}, #{foreign_key.references_column_names.collect(&:to_sym)}.inspect"
+              stream.print ", :on_update => #{foreign_key.on_update.inspect}" if foreign_key.on_update
+              stream.print ", :on_delete => #{foreign_key.on_delete.inspect}" if foreign_key.on_delete
+              stream.puts
+            end
+            stream.puts
+          end
         end
 
         if (aggregations = reflect_on_all_aggregations).any?
@@ -108,7 +140,7 @@ module ActiveSchema
 
       def _pp_options(options)
         return "" if options.empty?
-        str = options.inspect
+        str = Hash[options.collect { |key, value| [key, String === value ? value.to_sym : value] }].inspect
         str.sub!(/^\{/, '')
         str.sub!(/\}$/, '')
         str.sub!(/:0x[0-9a-f]+/, '')
