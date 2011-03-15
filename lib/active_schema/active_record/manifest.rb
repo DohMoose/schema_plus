@@ -74,7 +74,7 @@ module ActiveSchema
               indexes.delete(index)
               opts = index.opts.dup
               opts[:with] = (index.columns - [column.name]).collect(&:to_sym) if index.columns.length > 1
-              stream.print ", :index => #{opts.inspect}"
+              stream.print ", :index => #{_pp_options(opts, :braces => true)}"
             end
             stream.puts
           end
@@ -83,7 +83,7 @@ module ActiveSchema
           if indexes.any?
             stream.puts "== additional indexes"
             indexes.each do |index|
-              stream.puts "* index #{index.columns.collect(&:to_sym).inspect}#{_pp_options(index.opts)}"
+              stream.puts "* index #{index.columns.collect(&:to_sym).inspect}#{_pp_options(index.opts, :symbolize_values => true)}"
             end
             stream.puts
           end
@@ -102,7 +102,7 @@ module ActiveSchema
         if (aggregations = reflect_on_all_aggregations).any?
           stream.puts "== aggregations"
           aggregations.sort_by{|aggregation| aggregation.name.to_s}.each do |aggregation|
-            stream.puts "* #{aggregation.macro} #{aggregation.name.inspect}, #{aggregation.options.inspect.sub(/^\{/,'').sub(/\}$/,'')}"
+            stream.puts "* #{aggregation.macro} #{aggregation.name.inspect}#{_pp_options(aggregation.options)}"
           end
           stream.puts
         end
@@ -110,7 +110,7 @@ module ActiveSchema
         if (associations = reflect_on_all_associations).any?
           stream.puts "== associations"
           associations.sort_by{|association| association.name.to_s}.each do |association|
-            stream.puts "* #{association.macro} #{association.name.inspect}, #{association.options.inspect.sub(/^\{/,'').sub(/\}$/,'')}"
+            stream.puts "* #{association.macro} #{association.name.inspect}#{_pp_options(association.options)}"
           end
           stream.puts
         end
@@ -128,7 +128,7 @@ module ActiveSchema
                 filter += " #{attrs.inspect}"
               end
             end
-            stream.puts "* #{filter}#{_pp_options(validation.options)}"
+            stream.puts "* #{filter}#{_pp_options(validation.options, :symbolize_values => true)}"
           end
           stream.puts
         end
@@ -138,14 +138,27 @@ module ActiveSchema
 
       private
 
-      def _pp_options(options)
-        return "" if options.empty?
-        str = Hash[options.collect { |key, value| [key, String === value ? value.to_sym : value] }].inspect
-        str.sub!(/^\{/, '')
-        str.sub!(/\}$/, '')
-        str.sub!(/:0x[0-9a-f]+/, '')
-        str = ", " + str
-        str.gsub!(/, :\w+=>\[\]/, '')
+      def _pp_options(options, ppopts={})
+        str = options.keys.sort_by(&:to_s).collect{|key|
+          value = options[key]
+          valstr = case 
+                   when value.blank?
+                     nil
+                   when String === value
+                     value = value.to_sym if ppopts[:symbolize_values]
+                     value.inspect
+                   when Hash === value
+                     _pp_options(value, :braces => true)
+                   else
+                     value.inspect.sub(/:0x[0-9a-f]+/, '')
+                   end
+          ":#{key}=>#{valstr}" unless valstr.blank?
+        }.compact.join(", ")
+        if ppopts[:braces]
+          str = "{"+str+"}"
+        else
+          str = ", " + str unless str.blank?
+        end
         str
       end
 
