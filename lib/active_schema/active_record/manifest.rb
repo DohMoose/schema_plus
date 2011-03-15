@@ -101,7 +101,7 @@ module ActiveSchema
 
         if (aggregations = reflect_on_all_aggregations).any?
           stream.puts "== aggregations"
-          aggregations.each do |aggregation|
+          aggregations.sort_by{|aggregation| aggregation.name.to_s}.each do |aggregation|
             stream.puts "* #{aggregation.macro} #{aggregation.name.inspect}, #{aggregation.options.inspect.sub(/^\{/,'').sub(/\}$/,'')}"
           end
           stream.puts
@@ -109,7 +109,7 @@ module ActiveSchema
 
         if (associations = reflect_on_all_associations).any?
           stream.puts "== associations"
-          associations.each do |association|
+          associations.sort_by{|association| association.name.to_s}.each do |association|
             stream.puts "* #{association.macro} #{association.name.inspect}, #{association.options.inspect.sub(/^\{/,'').sub(/\}$/,'')}"
           end
           stream.puts
