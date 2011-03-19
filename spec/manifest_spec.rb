@@ -1,58 +1,78 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require 'stringio'
 
-require 'models/user'
-require 'models/post'
-
 describe "Manifest" do
 
   before(:all) do
-    load_core_schema
+    ActiveSchema.config.associations.auto_create = true;
     ActiveRecord::Migration.suppress_messages do
-      ActiveRecord::Migration.add_index(:posts, :user_id)
-      ActiveRecord::Migration.add_column(:posts, :number, :integer)
-      ActiveRecord::Migration.add_index(:posts, :number)
-      ActiveRecord::Migration.add_index(:posts, [:user_id, :author_id], :unique => true)
-      ActiveRecord::Migration.add_index(:posts, [:number, :user_id, :author_id], :unique => true)
+      ActiveRecord::Schema.define do
+        connection.tables.each do |table| drop_table table end
+
+        create_table :mspecs do |t|
+          t.integer :number,  :index => true
+          t.integer :size, :index => true
+          t.integer :weight, :index => {:with => :size, :unique => true }
+          t.index [:number, :size, :weight], :unique => true
+        end
+
+        create_table :mdependents do |t|
+          t.integer :mspec_id, :references => :mspecs
+        end
+      end
     end
+
+    class Mdependent < ActiveRecord::Base
+    end
+
+    class Mspec < ActiveRecord::Base
+      accepts_nested_attributes_for :mdependents
+      has_many :expclit, :class_name => "ManifestAux", :foreign_key => 'manifest_id'
+    end
+
   end
 
   context "string" do
-    let(:comment_manifest) do
-      Comment.manifest
+    let(:mdependent_manifest) do
+      Mdependent.manifest
     end
 
-    let(:post_manifest) do
-      Post.manifest
+    let(:mspec_manifest) do
+      Mspec.manifest
     end
 
     it "should include model name" do
-      comment_manifest.should match(%r{= class Comment})
+      mdependent_manifest.should match(%r{= class Mdependent})
     end
 
     it "should include column accessors" do
-      comment_manifest.should match(%r{[*] text :body})
-      comment_manifest.should match(%r{[*] integer :post_id})
+      mspec_manifest.should match(%r{[*] integer :size})
+      mdependent_manifest.should match(%r{[*] integer :mspec_id})
     end
 
-    it "should include associations" do
-      comment_manifest.should match(%r{[*] belongs_to :post})
-      post_manifest.should match(%r{[*] has_many :comments})
+    it "should include automatic associations" do
+      mdependent_manifest.should match(%r{[*] belongs_to :mspec})
+      mspec_manifest.should match(%r{[*] has_many :mdependents})
     end
+
+    it "should include explicit associations after reflection" do
+      mspec_manifest.should match(%r{[*] has_many :explicit})
+    end
+
 
     it "should include foreign keys" do
-      comment_manifest.should match(%r{:post_id.*:references => \[:posts, :id\]})
+      mdependent_manifest.should match(%r{:mspec_id.*:references => \[:mspecs, :id\]})
     end
 
     it "should include indexes" do
-      post_manifest.should match(%r{:number.*:index =>})
-      post_manifest.should match(%r{:user_id.*:index =>})
-      post_manifest.should match(%r{:author_id.*:index =>.*:with=>\[:user_id\]})
+      mspec_manifest.should match(%r{:number.*:index =>})
+      mspec_manifest.should match(%r{:size.*:index =>})
+      mspec_manifest.should match(%r{:weight.*:index =>.*:with=>\[:size\]})
     end
 
     it "should include additional indexes" do
-      post_manifest.should match(%r{== additional indexes})
-      post_manifest.should match(%r{index \[:number, :user_id, :author_id\]})
+      mspec_manifest.should match(%r{== additional indexes})
+      mspec_manifest.should match(%r{index \[:number, :size, :weight\]})
     end
   end
 
