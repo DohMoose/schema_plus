@@ -1,36 +1,36 @@
 require 'ostruct'
 
-module ActiveSchema
+module SchemaPlus
   module ActiveRecord
     module Associations
 
       def self.extended(base)
         class << base
-          alias_method_chain :reflect_on_association, :active_schema
-          alias_method_chain :reflect_on_all_associations, :active_schema
+          alias_method_chain :reflect_on_association, :schema_plus
+          alias_method_chain :reflect_on_all_associations, :schema_plus
         end
       end
 
-      def reflect_on_association_with_active_schema(*args)
-        _load_active_schema_associations unless @active_schema_associations_loaded
-        reflect_on_association_without_active_schema(*args)
+      def reflect_on_association_with_schema_plus(*args)
+        _load_schema_plus_associations unless @schema_plus_associations_loaded
+        reflect_on_association_without_schema_plus(*args)
       end
 
-      def reflect_on_all_associations_with_active_schema(*args)
-        _load_active_schema_associations unless @active_schema_associations_loaded
-        reflect_on_all_associations_without_active_schema(*args)
+      def reflect_on_all_associations_with_schema_plus(*args)
+        _load_schema_plus_associations unless @schema_plus_associations_loaded
+        reflect_on_all_associations_without_schema_plus(*args)
       end
 
       def define_attribute_methods(*args)
         super
-        _load_active_schema_associations unless @active_schema_associations_loaded
+        _load_schema_plus_associations unless @schema_plus_associations_loaded
       end
 
       private
 
-      def _load_active_schema_associations
-        @active_schema_associations_loaded = true
-        return unless active_schema_config.associations.auto_create?
+      def _load_schema_plus_associations
+        @schema_plus_associations_loaded = true
+        return unless schema_plus_config.associations.auto_create?
 
         reverse_foreign_keys.each do | foreign_key |
           if foreign_key.table_name =~ /^#{table_name}_(.*)$/ || foreign_key.table_name =~ /^(.*)_#{table_name}$/
@@ -152,7 +152,7 @@ module ActiveSchema
         name = name_concise if _use_concise_name?
         name = name.to_sym
         if (_filter_association(macro, name) && !_method_exists?(name))
-          logger.info "ActiveSchema associations: #{self.name || self.table_name.classify}.#{macro} #{name.inspect}, #{opts.inspect[1...-1]}"
+          logger.info "SchemaPlus associations: #{self.name || self.table_name.classify}.#{macro} #{name.inspect}, #{opts.inspect[1...-1]}"
           send macro, name, opts.dup
         end
       end
@@ -177,11 +177,11 @@ module ActiveSchema
       end
 
       def _use_concise_name?
-        active_schema_config.associations.concise_names?
+        schema_plus_config.associations.concise_names?
       end
 
       def _filter_association(macro, name)
-        config = active_schema_config.associations
+        config = schema_plus_config.associations
         case
         when config.only        then Array.wrap(config.only).include?(name)
         when config.except      then !Array.wrap(config.except).include?(name)

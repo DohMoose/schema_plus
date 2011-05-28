@@ -2,7 +2,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe ActiveRecord::Base do
-  include ActiveSchemaHelpers
+  include SchemaPlusHelpers
 
   around(:each) do |example|
     with_fk_auto_create(&example)
@@ -44,7 +44,7 @@ describe ActiveRecord::Base do
       )
       @post = Class.new(ActiveRecord::Base) do
         set_table_name "posts"
-        active_schema :associations => { :auto_create => false }
+        schema_plus :associations => { :auto_create => false }
       end
       @comment = Class.new(ActiveRecord::Base) do set_table_name "comments" end
       @post.reflect_on_association(:comments).should be_nil
@@ -84,7 +84,7 @@ describe ActiveRecord::Base do
     it "should respect :only" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :only => :owner }
+        schema_plus :associations => { :only => :owner }
       end
       check_reflections(:owner => true, :colors => false, :parts => false, :manifest => false)
     end
@@ -92,7 +92,7 @@ describe ActiveRecord::Base do
     it "should respect :except" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :except => :owner }
+        schema_plus :associations => { :except => :owner }
       end
       check_reflections(:owner => false, :colors => true, :parts => true, :manifest => true)
     end
@@ -100,7 +100,7 @@ describe ActiveRecord::Base do
     it "should respect :only_type :belongs_to" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :only_type => :belongs_to }
+        schema_plus :associations => { :only_type => :belongs_to }
       end
       check_reflections(:owner => true, :colors => false, :parts => false, :manifest => false)
     end
@@ -108,7 +108,7 @@ describe ActiveRecord::Base do
     it "should respect :except_type :belongs_to" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :except_type => :belongs_to }
+        schema_plus :associations => { :except_type => :belongs_to }
       end
       check_reflections(:owner => false, :colors => true, :parts => true, :manifest => true)
     end
@@ -116,7 +116,7 @@ describe ActiveRecord::Base do
     it "should respect :only_type :has_many" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :only_type => :has_many }
+        schema_plus :associations => { :only_type => :has_many }
       end
       check_reflections(:owner => false, :colors => false, :parts => true, :manifest => false)
     end
@@ -124,7 +124,7 @@ describe ActiveRecord::Base do
     it "should respect :except_type :has_many" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :except_type => :has_many }
+        schema_plus :associations => { :except_type => :has_many }
       end
       check_reflections(:owner => true, :colors => true, :parts => false, :manifest => true)
     end
@@ -132,7 +132,7 @@ describe ActiveRecord::Base do
     it "should respect :only_type :has_one" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :only_type => :has_one }
+        schema_plus :associations => { :only_type => :has_one }
       end
       check_reflections(:owner => false, :colors => false, :parts => false, :manifest => true)
     end
@@ -140,7 +140,7 @@ describe ActiveRecord::Base do
     it "should respect :except_type :has_one" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :except_type => :has_one }
+        schema_plus :associations => { :except_type => :has_one }
       end
       check_reflections(:owner => true, :colors => true, :parts => true, :manifest => false)
     end
@@ -148,7 +148,7 @@ describe ActiveRecord::Base do
     it "should respect :only_type :has_and_belongs_to_many" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :only_type => :has_and_belongs_to_many }
+        schema_plus :associations => { :only_type => :has_and_belongs_to_many }
       end
       check_reflections(:owner => false, :colors => true, :parts => false, :manifest => false)
     end
@@ -156,7 +156,7 @@ describe ActiveRecord::Base do
     it "should respect :except_type :has_and_belongs_to_many" do 
       @widget = Class.new(ActiveRecord::Base) do
         set_table_name "widgets"
-        active_schema :associations => { :except_type => :has_and_belongs_to_many }
+        schema_plus :associations => { :except_type => :has_and_belongs_to_many }
       end
       check_reflections(:owner => true, :colors => false, :parts => true, :manifest => true)
     end
@@ -171,7 +171,7 @@ describe ActiveRecord::Base do
       )
       @post = Class.new(ActiveRecord::Base) do
         set_table_name "posts"
-        active_schema :associations => { :auto_create => true }
+        schema_plus :associations => { :auto_create => true }
       end
       @comment = Class.new(ActiveRecord::Base) do set_table_name "comments" end
       @post.reflect_on_association(:comments).should_not be_nil
@@ -481,12 +481,12 @@ describe ActiveRecord::Base do
   protected
 
   def with_fk_auto_create(value = true, &block)
-    save = ActiveSchema.config.foreign_keys.auto_create
+    save = SchemaPlus.config.foreign_keys.auto_create
     begin
-      ActiveSchema.config.foreign_keys.auto_create = value
+      SchemaPlus.config.foreign_keys.auto_create = value
       yield
     ensure
-      ActiveSchema.config.foreign_keys.auto_create = save
+      SchemaPlus.config.foreign_keys.auto_create = save
     end
   end
 
@@ -495,12 +495,12 @@ describe ActiveRecord::Base do
   end
 
   def with_associations_config(opts, &block)
-    save = Hash[opts.keys.collect{|key| [key, ActiveSchema.config.associations.send(key)]}]
+    save = Hash[opts.keys.collect{|key| [key, SchemaPlus.config.associations.send(key)]}]
     begin
-      ActiveSchema.config.associations.update_attributes(opts)
+      SchemaPlus.config.associations.update_attributes(opts)
       yield
     ensure
-      ActiveSchema.config.associations.update_attributes(save)
+      SchemaPlus.config.associations.update_attributes(save)
     end
   end
 

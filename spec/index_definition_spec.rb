@@ -42,7 +42,7 @@ describe "Index definition" do
     end
   end
 
-  if ActiveSchemaHelpers.postgresql?
+  if SchemaPlusHelpers.postgresql?
 
     context "when case insensitive is added" do
 

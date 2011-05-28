@@ -1,4 +1,4 @@
-ActiveSchema.setup do |config|
+SchemaPlus.setup do |config|
 
   # Migration will generate foreign key if column name has _id suffix.
   # config.foreign_keys.auto_create = true

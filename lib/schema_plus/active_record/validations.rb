@@ -1,4 +1,4 @@
-module ActiveSchema
+module SchemaPlus
   module ActiveRecord
       module Validations
 
@@ -42,7 +42,7 @@ module ActiveSchema
         #  * :only - auto-validate only given attributes
         #  * :except - auto-validate all but given attributes
         #
-        def active_schema(*)
+        def schema_plus(*)
           super
           return unless create_schema_validations?
           set_possible_validations
@@ -120,7 +120,7 @@ module ActiveSchema
         end
 
         def create_schema_validations?
-          active_schema_config.validations.auto_create? && !(@schema_validations_loaded || abstract_class? || name.blank? || !table_exists?)
+          schema_plus_config.validations.auto_create? && !(@schema_validations_loaded || abstract_class? || name.blank? || !table_exists?)
         end
 
         def schema_validations_excluded_columns
@@ -132,9 +132,9 @@ module ActiveSchema
         end
 
         def schema_validations_filter!(fields, default_excludes)
-          if filtered_fields = active_schema_config.validations.only
+          if filtered_fields = schema_plus_config.validations.only
             filter_method = :select
-          elsif filtered_fields = active_schema_config.validations.except
+          elsif filtered_fields = schema_plus_config.validations.except
             filter_method = :reject
           else
             return
@@ -146,7 +146,7 @@ module ActiveSchema
         end
 
         def validate_logged(method, arg, opts={})
-          msg = "ActiveSchema validations: #{self.name}.#{method} #{arg.inspect}"
+          msg = "SchemaPlus validations: #{self.name}.#{method} #{arg.inspect}"
           msg += ", #{opts.inspect[1...-1]}" if opts.any?
           logger.info msg
           send method, arg, opts

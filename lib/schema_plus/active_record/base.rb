@@ -1,35 +1,35 @@
-module ActiveSchema
+module SchemaPlus
   module ActiveRecord
     module Base
       def self.included(base)
         base.extend(ClassMethods)
-        base.extend(ActiveSchema::ActiveRecord::Associations)
-        base.extend(ActiveSchema::ActiveRecord::Validations)
+        base.extend(SchemaPlus::ActiveRecord::Associations)
+        base.extend(SchemaPlus::ActiveRecord::Validations)
       end
 
       module ClassMethods
         def self.extended(base)
           class << base
-            alias_method_chain :columns, :active_schema
-            alias_method_chain :abstract_class?, :active_schema
-            alias_method_chain :reset_column_information, :active_schema
+            alias_method_chain :columns, :schema_plus
+            alias_method_chain :abstract_class?, :schema_plus
+            alias_method_chain :reset_column_information, :schema_plus
           end
         end
 
         public
 
         # class decorator
-        def active_schema(opts)
-          @active_schema_config = ActiveSchema.config.merge(opts)
+        def schema_plus(opts)
+          @schema_plus_config = SchemaPlus.config.merge(opts)
         end
 
-        def abstract_class_with_active_schema?
-          abstract_class_without_active_schema? || !(name =~ /^Abstract/).nil?
+        def abstract_class_with_schema_plus?
+          abstract_class_without_schema_plus? || !(name =~ /^Abstract/).nil?
         end
 
-        def columns_with_active_schema
+        def columns_with_schema_plus
           unless @columns
-            @columns = columns_without_active_schema
+            @columns = columns_without_schema_plus
             cols = columns_hash
             indexes.each do |index|
               next if index.columns.blank?
@@ -42,8 +42,8 @@ module ActiveSchema
           @columns
         end
 
-        def reset_column_information_with_active_schema
-          reset_column_information_without_active_schema
+        def reset_column_information_with_schema_plus
+          reset_column_information_without_schema_plus
           @indexes = @foreign_keys = nil
         end
 
@@ -59,8 +59,8 @@ module ActiveSchema
           connection.reverse_foreign_keys(table_name, "#{name} Reverse Foreign Keys")
         end
 
-        def active_schema_config
-          @active_schema_config ||= ActiveSchema.config.dup
+        def schema_plus_config
+          @schema_plus_config ||= SchemaPlus.config.dup
         end
       end
     end
